@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Удаление чека | Coffee Way</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: url("{{ url_for('static', filename='coffee-beans-levitate-white-background (3).jpg') }}") no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* Semi-transparent overlay to keep form readable */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      border-top: 6px solid #a0522d;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+
+    img.logo {
+      max-width: 140px;
+      display: block;
+      margin: 0 auto 15px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-weight: 600;
+      font-size: 24px;
+      color: #5a3e2b;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input, textarea {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: #a0522d;
+      outline: none;
+      box-shadow: 0 0 5px rgba(160, 82, 45, 0.5);
+    }
+
+    textarea {
+      resize: none;
+      min-height: 80px;
+    }
+
+    button {
+      padding: 12px;
+      background: #a0522d;
+      border: none;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #8b4513;
+    }
+
+    .status {
+      margin-top: 15px;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.4s ease-in-out;
+    }
+    .status.visible { opacity: 1; }
+    .status.success { color: #2e8b57; }
+    .status.error { color: #b22222; }
+    .status.warning { color: #ff8c00; }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #a0522d;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="container">
+    <img src="{{ url_for('static', filename='coffeewaylgoo.png') }}" alt="Coffee Way" class="logo">
+    <h2>Удаление чека</h2>
+    <form id="deleteForm">
+      <input type="text" name="transaction_id" placeholder="ID чека для удаления" required>
+      <input type="text" name="new_transaction_id" placeholder="ID нового чека (если есть)">
+      <textarea name="reason" placeholder="Причина удаления" required></textarea>
+      <input type="password" name="pin" placeholder="PIN сотрудника" required>
+      <button type="submit">Удалить чек</button>
+    </form>
+    <div class="status" id="statusMessage"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('deleteForm');
+    const statusMessage = document.getElementById('statusMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusMessage.innerHTML = `<span class="spinner"></span>Обработка...`;
+      statusMessage.className = "status visible";
+      
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch('/delete', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        statusMessage.textContent = result.message;
+
+        if (result.status === 'success') {
+          statusMessage.className = "status success visible";
+          form.reset();
+        } else if (result.status === 'warning') {
+          statusMessage.className = "status warning visible";
+        } else {
+          statusMessage.className = "status error visible";
+        }
+
+        setTimeout(() => {
+          statusMessage.classList.remove("visible");
+        }, 4000);
+
+      } catch (err) {
+        statusMessage.textContent = "Произошла ошибка при соединении с сервером.";
+        statusMessage.className = "status error visible";
+        setTimeout(() => {
+          statusMessage.classList.remove("visible");
+        }, 4000);
+      }
+    });
+  </script>
+</body>
+</html>
